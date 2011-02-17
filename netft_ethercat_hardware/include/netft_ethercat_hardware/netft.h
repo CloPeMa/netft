@@ -38,7 +38,7 @@
 #include "netft_rdt_driver/netft_rdt_driver.h"
 #include "ethercat_hardware/ethercat_device.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "geometry_msgs/Twist.h"
+#include "geometry_msgs/Wrench.h"
 
 namespace netft_ethercat_hardware
 {
@@ -58,6 +58,8 @@ namespace netft_ethercat_hardware
    @section ROS ROS interface
 
    @param address  IPV4 address for NetFT box. Example "192.168.1.1". 
+   @param publish_period  Period in seconds that plugin will publish force/torqe data to ROS topic
+   @param analog_in_name  Name to use when registering AnalogIn that constains force/torque data 
 */
 
 class NetFT : public EthercatDevice
@@ -85,7 +87,7 @@ protected:
   pr2_hardware_interface::AnalogIn analog_in_;
 
   //! Publish NetFT data to 
-  realtime_tools::RealtimePublisher<geometry_msgs::Twist> pub_;
+  realtime_tools::RealtimePublisher<geometry_msgs::Wrench> pub_;
 
   //! Last time NetFT data was published to ROS topic.  Used to limit publishing rate.
   ros::Time last_publish_time_;  

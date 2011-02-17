@@ -39,7 +39,7 @@
 
 #include "ros/ros.h"
 #include "netft_rdt_driver/netft_rdt_driver.h"
-#include "geometry_msgs/Twist.h"
+#include "geometry_msgs/Wrench.h"
 #include "diagnostic_msgs/DiagnosticArray.h"
 #include "diagnostic_updater/DiagnosticStatusWrapper.h"
 #include <unistd.h>
@@ -69,10 +69,9 @@ int main(int argc, char **argv)
   }
 
   std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(argv[1]));
-  ros::Publisher pub = nh.advertise<geometry_msgs::Twist>("netft_data", 100);
+  ros::Publisher pub = nh.advertise<geometry_msgs::Wrench>("netft_data", 100);
   ros::Rate pub_rate(100);
-  netft_rdt_driver::ForceTorqueData data;
-  geometry_msgs::Twist twist;
+  geometry_msgs::Wrench data;
 
   ros::Duration diag_pub_duration(1.0);
   ros::Publisher diag_pub = nh.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 2);
@@ -86,13 +85,7 @@ int main(int argc, char **argv)
     if (netft->waitForNewData())
     {
       netft->getData(data);
-      twist.linear.x  = data.fx_;
-      twist.linear.y  = data.fy_;
-      twist.linear.z  = data.fz_;
-      twist.angular.x = data.tx_;
-      twist.angular.y = data.ty_;
-      twist.angular.z = data.tz_;
-      pub.publish(twist);
+      pub.publish(data);
     }
 
     ros::Time current_time(ros::Time::now());

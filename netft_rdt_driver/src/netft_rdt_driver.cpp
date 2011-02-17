@@ -234,7 +234,7 @@ void NetFTRDTDriver::recvThreadFunc()
   try {
     recv_thread_running_ = true;
     RDTRecord rdt_record;
-    ForceTorqueData tmp_data;
+    geometry_msgs::Wrench tmp_data;
     uint8_t buffer[RDTRecord::RDT_RECORD_SIZE+1];
     while (!stop_recv_thread_)
     {
@@ -262,12 +262,12 @@ void NetFTRDTDriver::recvThreadFunc()
         }
         else 
         {
-          tmp_data.fx_ = double(rdt_record.fx_) * force_scale_;
-          tmp_data.fy_ = double(rdt_record.fy_) * force_scale_;
-          tmp_data.fz_ = double(rdt_record.fz_) * force_scale_;
-          tmp_data.tx_ = double(rdt_record.tx_) * torque_scale_;
-          tmp_data.ty_ = double(rdt_record.ty_) * torque_scale_;
-          tmp_data.tz_ = double(rdt_record.tz_) * torque_scale_;
+          tmp_data.force.x = double(rdt_record.fx_) * force_scale_;
+          tmp_data.force.y = double(rdt_record.fy_) * force_scale_;
+          tmp_data.force.z = double(rdt_record.fz_) * force_scale_;
+          tmp_data.torque.x = double(rdt_record.tx_) * torque_scale_;
+          tmp_data.torque.y = double(rdt_record.ty_) * torque_scale_;
+          tmp_data.torque.z = double(rdt_record.tz_) * torque_scale_;
           { boost::unique_lock<boost::mutex> lock(mutex_);
             new_data_ = tmp_data;
             lost_packets_ += (seqdiff - 1);
@@ -287,8 +287,7 @@ void NetFTRDTDriver::recvThreadFunc()
 }
 
 
-
-void NetFTRDTDriver::getData(ForceTorqueData &data)
+void NetFTRDTDriver::getData(geometry_msgs::Wrench &data)
 {
   { boost::unique_lock<boost::mutex> lock(mutex_);
     data = new_data_;
@@ -332,14 +331,14 @@ void NetFTRDTDriver::diagnostics(diagnostic_updater::DiagnosticStatusWrapper &d)
   d.addf("Force scale (N/bit)", "%f", force_scale_);
   d.addf("Torque scale (Nm/bit)", "%f", torque_scale_);
 
-  ForceTorqueData data;
+  geometry_msgs::Wrench data;
   getData(data);
-  d.addf("Force X (N)",   "%f", data.fx_);
-  d.addf("Force Y (N)",   "%f", data.fy_);
-  d.addf("Force Z (N)",   "%f", data.fz_);
-  d.addf("Torque X (Nm)", "%f", data.tx_);
-  d.addf("Torque Y (Nm)", "%f", data.ty_);
-  d.addf("Torque Z (Nm)", "%f", data.tz_);
+  d.addf("Force X (N)",   "%f", data.force.x);
+  d.addf("Force Y (N)",   "%f", data.force.y);
+  d.addf("Force Z (N)",   "%f", data.force.z);
+  d.addf("Torque X (Nm)", "%f", data.torque.x);
+  d.addf("Torque Y (Nm)", "%f", data.torque.y);
+  d.addf("Torque Z (Nm)", "%f", data.torque.z);
 
   last_diag_pub_time_ = current_time;
   diag_packet_count_ = packet_count_;

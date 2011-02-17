@@ -68,26 +68,35 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
   hw_ = hw;
 
   // Register analog inputs
-  if (hw && !hw->addAnalogIn(&analog_in_))
-  {
-    ROS_FATAL("An analog input with the name '%s' already exists.  NetFT device has a duplicate name", 
-              analog_in_.name_.c_str());
-    return -1;
-  }
-  analog_in_.state_.state_.resize(6);  // Reserve location for 6 analog values
 
   // Get device IP address from rosparam
   std::string address;
   if (!nh_.getParam("address", address))
   {
-    ROS_ERROR("No param 'address' in namespace %s", nh_.getNamespace().c_str());
+    ROS_ERROR("netft_ethercat_hardware : No param 'address' in namespace %s", nh_.getNamespace().c_str());
     return -1;
   }
+ 
+  // Use rosparm when for select name of AnalogIn
+  if (!nh_.getParam("analog_in_name", analog_in_.name_))
+  {
+    ROS_ERROR("netft_ethercat_hardware : No param 'analog_in_name' in namespace %s", nh_.getNamespace().c_str());
+    return -1;
+  }
+
+  if (hw && !hw->addAnalogIn(&analog_in_))
+  {
+    ROS_FATAL("netft_ethercat_hardware : An analog input with the name '%s' already exists.", 
+              analog_in_.name_.c_str());
+    return -1;
+  }
+  analog_in_.state_.state_.resize(6);  // Reserve location for 6 analog values
+
   
   double publish_period;
   if (!nh_.getParam("publish_period", publish_period))
   {
-    ROS_ERROR("No param 'publish_period' in namespace %s", nh_.getNamespace().c_str());
+    ROS_ERROR("netft_ethercat_hardware : No param 'publish_period' in namespace %s", nh_.getNamespace().c_str());
     return -1;
   }
   publish_period_ = ros::Duration(publish_period);
@@ -101,7 +110,7 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
   }
   catch (std::exception &e)
   {
-    ROS_ERROR("Error constructing NetFT driver : %s", e.what());
+    ROS_ERROR("netft_ethercat_hardware : Error constructing NetFT driver : %s", e.what());
     return -1;
   }
 
@@ -112,17 +121,17 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
 bool NetFT::unpackState(unsigned char *, unsigned char *)
 {
   // Take most recent UDP data and move to analog inputs
-  netft_rdt_driver::ForceTorqueData data;
+  geometry_msgs::Wrench data;
   netft_driver_->getData(data);
 
   // Update analog inputs
   analog_in_.state_.state_.resize(6);
-  analog_in_.state_.state_[0] = data.fx_;
-  analog_in_.state_.state_[1] = data.fy_;
-  analog_in_.state_.state_[2] = data.fz_;
-  analog_in_.state_.state_[3] = data.tx_;
-  analog_in_.state_.state_[4] = data.ty_;
-  analog_in_.state_.state_[5] = data.tz_;
+  analog_in_.state_.state_[0] = data.force.x;
+  analog_in_.state_.state_[1] = data.force.y;
+  analog_in_.state_.state_[2] = data.force.z;
+  analog_in_.state_.state_[3] = data.torque.x;
+  analog_in_.state_.state_[4] = data.torque.y;
+  analog_in_.state_.state_[5] = data.torque.z;
 
   if ( (hw_->current_time_ - last_publish_time_) > publish_period_ )
   {
@@ -135,12 +144,7 @@ bool NetFT::unpackState(unsigned char *, unsigned char *)
     if (pub_.trylock())
     {
       should_publish_ = false;
-      pub_.msg_.linear.x  = data.fx_;
-      pub_.msg_.linear.y  = data.fy_;
-      pub_.msg_.linear.z  = data.fz_;
-      pub_.msg_.angular.x = data.tx_;
-      pub_.msg_.angular.y = data.ty_;
-      pub_.msg_.angular.z = data.tz_;
+      pub_.msg_ = data;
       pub_.unlockAndPublish();
     }
   }
