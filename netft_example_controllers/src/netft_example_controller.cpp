@@ -83,7 +83,7 @@ bool NetFTExampleController::init(pr2_mechanism_model::RobotState *robot, ros::N
               analog_in_name.c_str());
     BOOST_FOREACH(const pr2_hardware_interface::AnalogInMap::value_type &v, hw->analog_ins_)
     {
-      ROS_INFO("analog : %s", v.first.c_str());
+      ROS_INFO("AnalogIn : %s", v.first.c_str());
     }
     return false;
   }

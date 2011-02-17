@@ -298,7 +298,7 @@ void NetFTRDTDriver::getData(geometry_msgs::Wrench &data)
 void NetFTRDTDriver::diagnostics(diagnostic_updater::DiagnosticStatusWrapper &d)
 {
   // Publish diagnostics
-  d.name = "NetFT RDT Driver";
+  d.name = "NetFT RDT Driver : " + address_;
   
   d.summary(d.OK, "OK");
   d.hardware_id = "0";

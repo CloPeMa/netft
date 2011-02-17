@@ -58,8 +58,8 @@ namespace netft_ethercat_hardware
    @section ROS ROS interface
 
    @param address  IPV4 address for NetFT box. Example "192.168.1.1". 
-   @param publish_period  Period in seconds that plugin will publish force/torqe data to ROS topic
-   @param analog_in_name  Name to use when registering AnalogIn that constains force/torque data 
+   @param ros_publish_period  Period in seconds that plugin will publish force/torqe data to ROS topic
+   @param analog_in_name  Name to use when registering AnalogIn that contains force/torque data 
 */
 
 class NetFT : public EthercatDevice

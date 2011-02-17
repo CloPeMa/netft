@@ -94,9 +94,9 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
 
   
   double publish_period;
-  if (!nh_.getParam("publish_period", publish_period))
+  if (!nh_.getParam("ros_publish_period", publish_period))
   {
-    ROS_ERROR("netft_ethercat_hardware : No param 'publish_period' in namespace %s", nh_.getNamespace().c_str());
+    ROS_ERROR("netft_ethercat_hardware : No param 'ros_publish_period' in namespace %s", nh_.getNamespace().c_str());
     return -1;
   }
   publish_period_ = ros::Duration(publish_period);
@@ -160,6 +160,7 @@ void NetFT::collectDiagnostics(EthercatCom *)
 void NetFT::diagnostics(diagnostic_updater::DiagnosticStatusWrapper &d, unsigned char *)
 {
   netft_driver_->diagnostics(d);
+  d.add("AnalogIn name", analog_in_.name_);
 }
   
 };
