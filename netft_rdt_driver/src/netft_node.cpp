@@ -45,32 +45,51 @@
 #include <unistd.h>
 #include <iostream>
 #include <memory>
+#include <boost/program_options.hpp>
 
+namespace po = boost::program_options;
 using namespace std;
-
-void usage(const char* progname)
-{
-  cerr << 
-    "usage : " << progname << " <netft IP address>" << endl;
-}
 
 
 int main(int argc, char **argv)
-{
-  const char *progname = argv[0];
-  
+{ 
   ros::init(argc, argv, "netft_node");
   ros::NodeHandle nh;
 
-  if (argc==1)
+  float pub_rate_hz;
+  string address;
+
+  po::options_description desc("Options");
+  desc.add_options()
+    ("help", "display help")
+    ("rate", po::value<float>(&pub_rate_hz)->default_value(100.0), "set publish rate (in hertz)")
+    ("address", po::value<string>(&address), "IP address of NetFT box")
+    ;
+     
+  po::positional_options_description p;
+  p.add("address",  1);
+
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+  po::notify(vm);
+
+  if (vm.count("help"))
   {
-    usage(progname);
+    cout << desc << endl;
+    //usage(progname);
+    exit(EXIT_SUCCESS);
+  }      
+
+  if (!vm.count("address"))
+  {
+    cout << desc << endl;
+    cerr << "Please specify address of NetFT" << endl;
     exit(EXIT_FAILURE);
   }
 
-  std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(argv[1]));
+  std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(address));
   ros::Publisher pub = nh.advertise<geometry_msgs::Wrench>("netft_data", 100);
-  ros::Rate pub_rate(100);
+  ros::Rate pub_rate(pub_rate_hz);
   geometry_msgs::Wrench data;
 
   ros::Duration diag_pub_duration(1.0);
@@ -87,7 +106,7 @@ int main(int argc, char **argv)
       netft->getData(data);
       pub.publish(data);
     }
-
+    
     ros::Time current_time(ros::Time::now());
     if ( (current_time - last_diag_pub_time) > diag_pub_duration )
     {
@@ -98,7 +117,7 @@ int main(int argc, char **argv)
       diag_pub.publish(diag_array);
       last_diag_pub_time = current_time;
     }
-
+    
     ros::spinOnce();
     pub_rate.sleep();
   }

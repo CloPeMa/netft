@@ -38,6 +38,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
 #include <string>
 
 #include "diagnostic_updater/DiagnosticStatusWrapper.h"
@@ -77,6 +78,7 @@ protected:
   boost::asio::ip::udp::socket socket_;
   boost::mutex mutex_;
   boost::thread recv_thread_;
+  boost::condition condition_;
   volatile bool stop_recv_thread_;
   //! True if recv loop is still running
   bool recv_thread_running_;

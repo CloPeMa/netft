@@ -193,25 +193,16 @@ NetFTRDTDriver::~NetFTRDTDriver()
 
 bool NetFTRDTDriver::waitForNewData()
 {
-  unsigned current_packet_count;
-  { boost::unique_lock<boost::mutex> lock(mutex_);
-    current_packet_count = packet_count_;
-  }
-
-  // Wait upto 100ms for new recieve packet
-  ros::Duration ten_ms(0.01);
-  for (int i=0;i<10;++i)
+  // Wait upto 100ms for new data
+  bool got_new_data = false;
   {
-    ten_ms.sleep();
-    { boost::unique_lock<boost::mutex> lock(mutex_);
-      if (packet_count_ != current_packet_count)
-      {
-        break;
-      }
-    }
+    boost::mutex::scoped_lock lock(mutex_);
+    unsigned current_packet_count = packet_count_;
+    condition_.timed_wait(lock, boost::posix_time::milliseconds(100));    
+    got_new_data = packet_count_ != current_packet_count;
   }
 
-  return (packet_count_ != current_packet_count);
+  return got_new_data;
 }
 
 
@@ -224,7 +215,7 @@ void NetFTRDTDriver::startStreaming(void)
   // TODO change buffer into boost::array
   uint8_t buffer[RDTCommand::RDT_COMMAND_SIZE];
   start_transmission.pack(buffer);
-  socket_.send(boost::asio::buffer(buffer, RDTCommand::RDT_COMMAND_SIZE));  
+  socket_.send(boost::asio::buffer(buffer, RDTCommand::RDT_COMMAND_SIZE)); 
 }
 
 
@@ -272,6 +263,7 @@ void NetFTRDTDriver::recvThreadFunc()
             new_data_ = tmp_data;
             lost_packets_ += (seqdiff - 1);
             ++packet_count_;
+            condition_.notify_all();
           }
         }
       }
