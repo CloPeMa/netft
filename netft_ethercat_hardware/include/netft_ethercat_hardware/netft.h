@@ -38,7 +38,7 @@
 #include "netft_rdt_driver/netft_rdt_driver.h"
 #include "ethercat_hardware/ethercat_device.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
 
 namespace netft_ethercat_hardware
 {
@@ -87,13 +87,17 @@ protected:
   pr2_hardware_interface::AnalogIn analog_in_;
 
   //! Publish NetFT data to 
-  realtime_tools::RealtimePublisher<geometry_msgs::Wrench> pub_;
+  realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped> *pub_;
+  realtime_tools::RealtimePublisher<geometry_msgs::Wrench>    *pub_old_;  //!< Wrench message type is deprecated
 
   //! Last time NetFT data was published to ROS topic.  Used to limit publishing rate.
   ros::Time last_publish_time_;  
   ros::Duration publish_period_;
   bool should_publish_;
 
+
+  bool tryPublish(const geometry_msgs::WrenchStamped &data);
+  bool tryPublishOld(const geometry_msgs::WrenchStamped &data);
 
   // Double buffer for sharing data between UDP receive thread, and update function (realtime thread)
   //ThreadSafeDoubleBuffer<NetFTAnalog> double_buffer_;

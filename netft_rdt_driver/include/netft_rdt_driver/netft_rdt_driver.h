@@ -42,7 +42,7 @@
 #include <string>
 
 #include "diagnostic_updater/DiagnosticStatusWrapper.h"
-#include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
 
 namespace netft_rdt_driver
 {
@@ -56,7 +56,7 @@ public:
   ~NetFTRDTDriver();
 
   //! Get newest RDT data from netFT device
-  void getData(geometry_msgs::Wrench &data);
+  void getData(geometry_msgs::WrenchStamped &data);
 
   //! Add device diagnostics status wrapper
   void diagnostics(diagnostic_updater::DiagnosticStatusWrapper &d);
@@ -86,13 +86,15 @@ protected:
   std::string recv_thread_error_msg_; 
 
   //! Newest data received from netft device
-  geometry_msgs::Wrench new_data_;
+  geometry_msgs::WrenchStamped new_data_;
   //! Count number of received <good> packets
   unsigned packet_count_;
   //! Count of lost RDT packets using RDT sequence number
   unsigned lost_packets_;
   //! Counts number of out-of-order (or duplicate) received packets
   unsigned out_of_order_count_;
+  //! Incremental counter for wrench header
+  unsigned seq_counter_;
 
   //! Scaling factor for converting raw force values from device into Newtons
   double force_scale_;

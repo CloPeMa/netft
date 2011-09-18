@@ -133,6 +133,7 @@ NetFTRDTDriver::NetFTRDTDriver(const std::string &address) :
   packet_count_(0),
   lost_packets_(0),
   out_of_order_count_(0),
+  seq_counter_(0),
   diag_packet_count_(0),
   last_diag_pub_time_(ros::Time::now()),
   last_rdt_sequence_(0),
@@ -225,7 +226,7 @@ void NetFTRDTDriver::recvThreadFunc()
   try {
     recv_thread_running_ = true;
     RDTRecord rdt_record;
-    geometry_msgs::Wrench tmp_data;
+    geometry_msgs::WrenchStamped tmp_data;
     uint8_t buffer[RDTRecord::RDT_RECORD_SIZE+1];
     while (!stop_recv_thread_)
     {
@@ -253,12 +254,15 @@ void NetFTRDTDriver::recvThreadFunc()
         }
         else 
         {
-          tmp_data.force.x = double(rdt_record.fx_) * force_scale_;
-          tmp_data.force.y = double(rdt_record.fy_) * force_scale_;
-          tmp_data.force.z = double(rdt_record.fz_) * force_scale_;
-          tmp_data.torque.x = double(rdt_record.tx_) * torque_scale_;
-          tmp_data.torque.y = double(rdt_record.ty_) * torque_scale_;
-          tmp_data.torque.z = double(rdt_record.tz_) * torque_scale_;
+          tmp_data.header.seq = seq_counter_++;
+          tmp_data.header.stamp = ros::Time::now();
+          tmp_data.header.frame_id = "base_link";
+          tmp_data.wrench.force.x = double(rdt_record.fx_) * force_scale_;
+          tmp_data.wrench.force.y = double(rdt_record.fy_) * force_scale_;
+          tmp_data.wrench.force.z = double(rdt_record.fz_) * force_scale_;
+          tmp_data.wrench.torque.x = double(rdt_record.tx_) * torque_scale_;
+          tmp_data.wrench.torque.y = double(rdt_record.ty_) * torque_scale_;
+          tmp_data.wrench.torque.z = double(rdt_record.tz_) * torque_scale_;
           { boost::unique_lock<boost::mutex> lock(mutex_);
             new_data_ = tmp_data;
             lost_packets_ += (seqdiff - 1);
@@ -279,7 +283,7 @@ void NetFTRDTDriver::recvThreadFunc()
 }
 
 
-void NetFTRDTDriver::getData(geometry_msgs::Wrench &data)
+void NetFTRDTDriver::getData(geometry_msgs::WrenchStamped &data)
 {
   { boost::unique_lock<boost::mutex> lock(mutex_);
     data = new_data_;
@@ -323,14 +327,14 @@ void NetFTRDTDriver::diagnostics(diagnostic_updater::DiagnosticStatusWrapper &d)
   d.addf("Force scale (N/bit)", "%f", force_scale_);
   d.addf("Torque scale (Nm/bit)", "%f", torque_scale_);
 
-  geometry_msgs::Wrench data;
+  geometry_msgs::WrenchStamped data;
   getData(data);
-  d.addf("Force X (N)",   "%f", data.force.x);
-  d.addf("Force Y (N)",   "%f", data.force.y);
-  d.addf("Force Z (N)",   "%f", data.force.z);
-  d.addf("Torque X (Nm)", "%f", data.torque.x);
-  d.addf("Torque Y (Nm)", "%f", data.torque.y);
-  d.addf("Torque Z (Nm)", "%f", data.torque.z);
+  d.addf("Force X (N)",   "%f", data.wrench.force.x);
+  d.addf("Force Y (N)",   "%f", data.wrench.force.y);
+  d.addf("Force Z (N)",   "%f", data.wrench.force.z);
+  d.addf("Torque X (Nm)", "%f", data.wrench.torque.x);
+  d.addf("Torque Y (Nm)", "%f", data.wrench.torque.y);
+  d.addf("Torque Z (Nm)", "%f", data.wrench.torque.z);
 
   last_diag_pub_time_ = current_time;
   diag_packet_count_ = packet_count_;

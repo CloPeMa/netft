@@ -39,7 +39,7 @@
 
 #include "ros/ros.h"
 #include "netft_rdt_driver/netft_rdt_driver.h"
-#include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
 #include "diagnostic_msgs/DiagnosticArray.h"
 #include "diagnostic_updater/DiagnosticStatusWrapper.h"
 #include <unistd.h>
@@ -63,6 +63,7 @@ int main(int argc, char **argv)
   desc.add_options()
     ("help", "display help")
     ("rate", po::value<float>(&pub_rate_hz)->default_value(100.0), "set publish rate (in hertz)")
+    ("wrench", "publish older Wrench message type instead of WrenchStamped")
     ("address", po::value<string>(&address), "IP address of NetFT box")
     ;
      
@@ -87,10 +88,25 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
+  bool publish_wrench = false;
+  if (vm.count("wrench"))
+  {
+    publish_wrench = true;
+    ROS_WARN("Publishing NetFT data as geometry_msgs::Wrench is deprecated");
+  }
+
   std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(address));
-  ros::Publisher pub = nh.advertise<geometry_msgs::Wrench>("netft_data", 100);
+  ros::Publisher pub;
+  if (publish_wrench)
+  {
+    pub = nh.advertise<geometry_msgs::Wrench>("netft_data", 100);
+  }
+  else 
+  {
+    pub = nh.advertise<geometry_msgs::WrenchStamped>("netft_data", 100);
+  }
   ros::Rate pub_rate(pub_rate_hz);
-  geometry_msgs::Wrench data;
+  geometry_msgs::WrenchStamped data;
 
   ros::Duration diag_pub_duration(1.0);
   ros::Publisher diag_pub = nh.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 2);
@@ -104,7 +120,15 @@ int main(int argc, char **argv)
     if (netft->waitForNewData())
     {
       netft->getData(data);
-      pub.publish(data);
+      if (publish_wrench) 
+      {
+        //geometry_msgs::Wrench(data.wrench);
+        pub.publish(data.wrench);
+      }
+      else 
+      {
+        pub.publish(data);
+      }
     }
     
     ros::Time current_time(ros::Time::now());
@@ -113,7 +137,7 @@ int main(int argc, char **argv)
       diag_array.status.clear();
       netft->diagnostics(diag_status);
       diag_array.status.push_back(diag_status);
-      diag_array.header.stamp = ros::Time::now();      
+      diag_array.header.stamp = ros::Time::now();
       diag_pub.publish(diag_array);
       last_diag_pub_time = current_time;
     }

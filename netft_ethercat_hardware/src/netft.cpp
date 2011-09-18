@@ -40,7 +40,9 @@
 // will not be loaded on demand because EML finds device with matching product ID.
 // However, newer version of ethercat_hardware will use rosparam to load non-ethercat 
 // plugins.  Non-ethercat plugins can take commands and provide data to realtime system
-PLUGINLIB_REGISTER_CLASS(NetFT, netft_ethercat_hardware::NetFT, EthercatDevice);
+//PLUGINLIB_REGISTER_CLASS(NetFT, netft_ethercat_hardware::NetFT, EthercatDevice);
+PLUGINLIB_DECLARE_CLASS(netft_ethercat_hardware, NetFT, netft_ethercat_hardware::NetFT, EthercatDevice);
+
 
 namespace netft_ethercat_hardware
 {
@@ -49,6 +51,8 @@ namespace netft_ethercat_hardware
 NetFT::NetFT() :
   hw_(NULL),
   netft_driver_(NULL),
+  pub_(NULL),
+  pub_old_(NULL),
   publish_period_(0.1)
 {
 }
@@ -56,6 +60,8 @@ NetFT::NetFT() :
 NetFT::~NetFT()
 {
   delete netft_driver_;
+  delete pub_;
+  delete pub_old_;
 }
 
 void NetFT::construct(ros::NodeHandle &nh)
@@ -102,7 +108,21 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
   publish_period_ = ros::Duration(publish_period);
   last_publish_time_ = ros::Time::now();
 
-  pub_.init(nh_, "netft_data", 2);  
+  bool publish_wrench = false;
+  if (!nh_.getParam("publish_wrench", publish_wrench))
+  {
+    publish_wrench = false;
+  }
+
+  if (publish_wrench)
+  {
+    ROS_WARN("Publishing NetFT data as geometry_msgs::Wrench is deprecated");
+    pub_old_ = new realtime_tools::RealtimePublisher<geometry_msgs::Wrench>(nh_, "netft_data", 2);
+  }
+  else 
+  {
+    pub_ = new realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped>(nh_, "netft_data", 2);
+  }
 
   try 
   {
@@ -121,17 +141,17 @@ int NetFT::initialize(pr2_hardware_interface::HardwareInterface *hw, bool)
 bool NetFT::unpackState(unsigned char *, unsigned char *)
 {
   // Take most recent UDP data and move to analog inputs
-  geometry_msgs::Wrench data;
+  geometry_msgs::WrenchStamped data;
   netft_driver_->getData(data);
 
   // Update analog inputs
   analog_in_.state_.state_.resize(6);
-  analog_in_.state_.state_[0] = data.force.x;
-  analog_in_.state_.state_[1] = data.force.y;
-  analog_in_.state_.state_[2] = data.force.z;
-  analog_in_.state_.state_[3] = data.torque.x;
-  analog_in_.state_.state_[4] = data.torque.y;
-  analog_in_.state_.state_[5] = data.torque.z;
+  analog_in_.state_.state_[0] = data.wrench.force.x;
+  analog_in_.state_.state_[1] = data.wrench.force.y;
+  analog_in_.state_.state_[2] = data.wrench.force.z;
+  analog_in_.state_.state_[3] = data.wrench.torque.x;
+  analog_in_.state_.state_[4] = data.wrench.torque.y;
+  analog_in_.state_.state_[5] = data.wrench.torque.z;
 
   if ( (hw_->current_time_ - last_publish_time_) > publish_period_ )
   {
@@ -141,16 +161,49 @@ bool NetFT::unpackState(unsigned char *, unsigned char *)
   
   if (should_publish_)
   {
-    if (pub_.trylock())
+    if (tryPublish(data) || tryPublishOld(data))
     {
       should_publish_ = false;
-      pub_.msg_ = data;
-      pub_.unlockAndPublish();
     }
   }
 
   return true;
 }
+
+bool NetFT::tryPublish(const geometry_msgs::WrenchStamped &data)
+{
+  if (pub_ == NULL)
+  {
+    return false;
+  }
+  if (!pub_->trylock())
+  {
+    return false;
+  }
+   
+  pub_->msg_ = data;
+  pub_->unlockAndPublish();
+  return true;
+}
+
+
+bool NetFT::tryPublishOld(const geometry_msgs::WrenchStamped &data)
+{
+  if (pub_old_ == NULL)
+  {
+    return false;
+  }
+  if (!pub_old_->trylock())
+  {
+    return false;
+  }
+
+  pub_old_->msg_ = data.wrench;
+  pub_old_->unlockAndPublish();
+  return true;
+}
+
+
 
 void NetFT::collectDiagnostics(EthercatCom *)
 {
