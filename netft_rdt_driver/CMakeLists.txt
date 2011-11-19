@@ -29,7 +29,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(${PROJECT_NAME} src/netft_rdt_driver.cpp)
+rosbuild_add_boost_directories()
 
+# Driver library that can be used by other stuff (ie : netft_ethercat_hardware) 
+rosbuild_add_library(${PROJECT_NAME} src/netft_rdt_driver.cpp)
+rosbuild_link_boost(${PROJECT_NAME} system thread)
+
+# Stand-alone ROS node that uses driver library 
 rosbuild_add_executable(netft_node src/netft_node.cpp)
-target_link_libraries(netft_node ${PROJECT_NAME} boost_system boost_program_options)
+target_link_libraries(netft_node ${PROJECT_NAME})
+rosbuild_link_boost(netft_node program_options)
