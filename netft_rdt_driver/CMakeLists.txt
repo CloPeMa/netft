@@ -32,4 +32,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(${PROJECT_NAME} src/netft_rdt_driver.cpp)
 
 rosbuild_add_executable(netft_node src/netft_node.cpp)
-target_link_libraries(netft_node ${PROJECT_NAME})
+target_link_libraries(netft_node ${PROJECT_NAME} boost_system boost_program_options)
