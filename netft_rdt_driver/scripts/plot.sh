@@ -2,7 +2,7 @@
 
 TOPIC="$1"
 if [ -z "$TOPIC" ] ; then
-    TOPIC="netft_data"
+    TOPIC="netft_data/wrench"
 fi
 
 rxplot -b 10 -p 10 \
