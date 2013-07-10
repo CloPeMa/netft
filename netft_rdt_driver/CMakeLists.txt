@@ -1,41 +1,32 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_init()
+# http://ros.org/doc/groovy/api/catkin/html/user_guide/supposed.html
+cmake_minimum_required(VERSION 2.8.3)
+project(netft_rdt_driver)
+find_package(catkin REQUIRED COMPONENTS roscpp diagnostic_updater diagnostic_msgs geometry_msgs roscpp_serialization)
+find_package(Boost REQUIRED COMPONENTS system thread program_options)
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+include_directories(include)
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+link_directories(${catkin_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
 
-rosbuild_add_boost_directories()
+add_library(${PROJECT_NAME} SHARED src/netft_rdt_driver.cpp)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Driver library that can be used by other stuff (ie : netft_ethercat_hardware) 
-rosbuild_add_library(${PROJECT_NAME} src/netft_rdt_driver.cpp)
-rosbuild_link_boost(${PROJECT_NAME} system thread)
 
-# Stand-alone ROS node that uses driver library 
-rosbuild_add_executable(netft_node src/netft_node.cpp)
+add_executable(netft_node src/netft_node.cpp)
 target_link_libraries(netft_node ${PROJECT_NAME})
-rosbuild_link_boost(netft_node program_options)
+target_link_libraries(netft_node ${Boost_LIBRARIES})
+target_link_libraries(netft_node ${catkin_LIBRARIES})
+
+catkin_package(
+    DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
+    CATKIN_DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
+    LIBRARIES ${PROJECT_NAME}
+)
