@@ -4,12 +4,6 @@ project(netft_rdt_driver)
 find_package(catkin REQUIRED COMPONENTS roscpp diagnostic_updater diagnostic_msgs geometry_msgs roscpp_serialization)
 find_package(Boost REQUIRED COMPONENTS system thread program_options)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(include)
 
