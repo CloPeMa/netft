@@ -65,6 +65,10 @@ public:
   // Returns true if new data has arrived, false it function times out
   bool waitForNewData(void);
 
+  void set_frame_id(std::string frame_id) {
+    this->frame_id_ = frame_id;
+  }
+
 protected:
   void recvThreadFunc(void);
 
@@ -84,6 +88,9 @@ protected:
   bool recv_thread_running_;
   //! Set if recv thread exited because of error
   std::string recv_thread_error_msg_; 
+
+  //! Frame for WrenchStamped message
+  std::string frame_id_;
 
   //! Newest data received from netft device
   geometry_msgs::WrenchStamped new_data_;

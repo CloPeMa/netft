@@ -130,6 +130,7 @@ NetFTRDTDriver::NetFTRDTDriver(const std::string &address) :
   socket_(io_service_),
   stop_recv_thread_(false),
   recv_thread_running_(false),
+  frame_id_("/base_link"),
   packet_count_(0),
   lost_packets_(0),
   out_of_order_count_(0),
@@ -256,7 +257,7 @@ void NetFTRDTDriver::recvThreadFunc()
         {
           tmp_data.header.seq = seq_counter_++;
           tmp_data.header.stamp = ros::Time::now();
-          tmp_data.header.frame_id = "base_link";
+          tmp_data.header.frame_id = frame_id_;
           tmp_data.wrench.force.x = double(rdt_record.fx_) * force_scale_;
           tmp_data.wrench.force.y = double(rdt_record.fy_) * force_scale_;
           tmp_data.wrench.force.z = double(rdt_record.fz_) * force_scale_;

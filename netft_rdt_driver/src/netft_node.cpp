@@ -58,6 +58,7 @@ int main(int argc, char **argv)
 
   float pub_rate_hz;
   string address;
+  string frame_id;
 
   po::options_description desc("Options");
   desc.add_options()
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
     ("rate", po::value<float>(&pub_rate_hz)->default_value(100.0), "set publish rate (in hertz)")
     ("wrench", "publish older Wrench message type instead of WrenchStamped")
     ("address", po::value<string>(&address), "IP address of NetFT box")
+    ("frame-id", po::value<string>(&frame_id), "Frame id for published WrenchStamped messages")
     ;
      
   po::positional_options_description p;
@@ -96,6 +98,12 @@ int main(int argc, char **argv)
   }
 
   std::auto_ptr<netft_rdt_driver::NetFTRDTDriver> netft(new netft_rdt_driver::NetFTRDTDriver(address));
+
+  if (vm.count("frame-id"))
+  {
+    netft->set_frame_id(frame_id);
+  }
+
   ros::Publisher pub;
   if (publish_wrench)
   {
