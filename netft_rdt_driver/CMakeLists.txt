@@ -9,18 +9,18 @@ include_directories(include)
 
 link_directories(${catkin_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
 
+catkin_package(
+    DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
+    CATKIN_DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
+    LIBRARIES ${PROJECT_NAME}
+)
+
 add_library(${PROJECT_NAME} SHARED src/netft_rdt_driver.cpp)
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-
 
 add_executable(netft_node src/netft_node.cpp)
 target_link_libraries(netft_node ${PROJECT_NAME})
 target_link_libraries(netft_node ${Boost_LIBRARIES})
 target_link_libraries(netft_node ${catkin_LIBRARIES})
 
-catkin_package(
-    DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
-    CATKIN_DEPENDS roscpp diagnostic_updater diagnostic_msgs geometry_msgs
-    LIBRARIES ${PROJECT_NAME}
-)
