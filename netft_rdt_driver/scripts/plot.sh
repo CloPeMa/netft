@@ -5,6 +5,6 @@ if [ -z "$TOPIC" ] ; then
     TOPIC="netft_data/wrench"
 fi
 
-rxplot -b 10 -p 10 \
+rqt_plot -b 10 -p 10 \
     ${TOPIC}/force/x,${TOPIC}/force/y,${TOPIC}/force/z  \
     ${TOPIC}/torque/x,${TOPIC}/torque/y,${TOPIC}/torque/z
